@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Миуалы ағаш Зияткерлік Ойыны</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Play&display=swap'); /* For a futuristic/game look */
+        
+        :root {
+            --primary-color: #10b981; /* Emerald */
+            --secondary-color: #374151; /* Gray/Dark */
+            --accent-color: #fcd34d; /* Amber */
+        }
+        
+        body {
+            font-family: 'Play', sans-serif;
+            background-color: #0d0d0d;
+            color: #ffffff;
+            overflow: hidden; /* Hide overflow from floating elements */
+        }
+
+        /* Custom Studio and Game Board Styling */
+        .studio-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(16, 185, 129, 0.1) 0%, rgba(13, 13, 13, 1) 70%);
+            z-index: 0;
+        }
+
+        .game-grid {
+            border: 4px solid var(--primary-color);
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.5);
+            background-color: rgba(23, 37, 84, 0.9); /* Dark Blue Overlay */
+        }
+
+        .category-header {
+            background-color: var(--primary-color);
+            color: #1f2937;
+            font-size: 1.25rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .score-button {
+            transition: all 0.2s ease-in-out;
+            background-color: #3b82f6; /* Blue for contrast */
+            box-shadow: 0 4px 0 #1d4ed8;
+            cursor: pointer;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            border-radius: 0.5rem;
+            border-bottom: 4px solid #1d4ed8;
+        }
+
+        .score-button:hover:not(.disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #1d4ed8;
+        }
+
+        .score-button.disabled {
+            background-color: #1f2937;
+            color: #6b7280;
+            box-shadow: none;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        /* Floating Elements Animation */
+        .floating-element {
+            position: absolute;
+            opacity: 0.1;
+            font-size: 50px;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); }
+            25% { transform: translateY(-10vh) translateX(10vw) rotate(5deg); }
+            50% { transform: translateY(-20vh) translateX(0) rotate(0deg); }
+            75% { transform: translateY(-10vh) translateX(-10vw) rotate(-5deg); }
+            100% { transform: translateY(0) translateX(0) rotate(0deg); }
+        }
+
+        /* Individual element positions and speed */
+        #tree { top: 10%; left: 5%; animation-duration: 25s; }
+        #horse { top: 60%; right: 10%; animation-duration: 30s; animation-delay: 5s; }
+        #axe { bottom: 5%; left: 20%; animation-duration: 15s; animation-delay: 2s; }
+        #word { top: 30%; right: 5%; font-size: 80px; opacity: 0.05; animation-duration: 35s; }
+
+        /* Modal Styling */
+        .modal-content {
+            background-color: #1f2937;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 50px var(--primary-color);
+        }
+    </style>
+    <script>
+        // Ағаш, жылқы, балта, сөз
+        const FLOATING_ELEMENTS = [
+            { id: "tree", symbol: "🌳" },
+            { id: "horse", symbol: "🐎" },
+            { id: "axe", symbol: "🪓" },
+            { id: "word", symbol: "ҚАСИЕТ" } 
+        ];
+
+        const QUESTIONS = [
+            {
+                category: "Кейіпкерлер (Жамбыл)",
+                questions: [
+                    { score: 100, q: "Жамбыл ата мен Әлиасқар жолға шыққанда, олар қандай шоқыға өрледі?", a: "Қарасай шоқысына." },
+                    { score: 200, q: "Жамбыл ата балтамен ағаш шауып тұрған адамға айқайлағанда, оның қолын алмай, не істеді?", a: "Қолын сілтеп тастады." },
+                    { score: 300, q: "Жамбыл ата 'Ағашқа неге балта шабасың?' деп кімнің көзін ойып аламын деп қорқытты?", a: "Балта шауып тұрған адамның (Әлімжанның)." },
+                    { score: 400, q: "Жамбыл атаның атында інілері ретінде кімдер еске түседі?", a: "Сәкен мен Ораз." },
+                    { score: 500, q: "Жамбыл ата 'қисық бұтақ' пен 'қисық мінезді адамды' салыстырғанда, оның тәрбиеге көнбей, қалай болғанын айтады?", a: "Мерт болды (өмірден өтті, жойылды)." },
+                ]
+            },
+            {
+                category: "Қасиетті Ағаш",
+                questions: [
+                    { score: 100, q: "Жамбыл көрмегелі он шақты жыл болған ағаш қандай ағаш?", a: "Қасиетті ағаш (мәуелі долана)." },
+                    { score: 200, q: "Бұл мәуелі ағашты кім тіккен?", a: "Сүйінбай атасы (Сүйінбай ақын)." },
+                    { score: 300, q: "Әлімжанның сөзі бойынша, ол ағаштың көлеңкесіне не үшін келіп саялайды?", a: "Мал баққанда күн ыстықта демалу үшін." },
+                    { score: 400, q: "Ағаштың бұтағы қандай жеміс ағашының сиқынын кетіре, теріс шығып тұрған?", a: "Мәуелі долананың." },
+                    { score: 500, q: "Жамбыл атаның сөзі бойынша, 'жердің көркі' не?", a: "Ағаш." },
+                ]
+            },
+            {
+                category: "Оқиға/Жер-су",
+                questions: [
+                    { score: 100, q: "Жамбыл мен Әлиасқар қай жайлаудың күнгей жағымен келе жатты?", a: "Майтөбе жайлауының." },
+                    { score: 200, q: "Қурап тұрған қисық бұтақ қай жаққа қарай қисая салбырай өскен еді?", a: "Сайға қарай." },
+                    { score: 300, q: "Әлімжан ағаштың қисық бұтағын түзеу үшін немен тартып байлап жүрді?", a: "Қайыспен." },
+                    { score: 400, q: "Ағашты шауып тұрған жігіт Әлімжанның жасы қаншада және ол қандай адам?", a: "Қырықтың ішіндегі, қаба сақалды, орта бойлы." },
+                    { score: 500, q: "Жамбыл ата ағашқа қарағанда есіне түскен ауылдағы адам кім?", a: "Қисаділ." },
+                ]
+            },
+            {
+                category: "Символдық Мағына",
+                questions: [
+                    { score: 100, q: "Қураған, қисық бұтақ Жамбыл атаның сөзі бойынша нені білдіреді?", a: "Қисық мінезді, қиқар, жаман адамды." },
+                    { score: 200, q: "Әлімжан ағаштың қураған бұтағын жылына неше рет кесіп тастайды?", a: "Екі-үш рет." },
+                    { score: 300, q: "Әлімжанның айтуынша, олардың ауылы бұл мәуелі ағашты қалай санайды?", a: "Қасиетті санайды." },
+                    { score: 400, q: "Жамбыл ата 'Тәрбиеге көнбеді, мерт болды' деген сөзді кімге қатысты айтты?", a: "Қисық бұтаққа (қисық мінезді адамға)." },
+                    { score: 500, q: "Жамбыл ақын, Сүйінбай ақын, Сәкен, Ораз, Қисаділ есімдері ағашқа қарағанда не үшін еске түседі?", a: "Олардың бәрі зәулім ағаш сияқты ардагер, көрнекті тұлғалар болғандықтан." },
+                ]
+            },
+        ];
+
+        let totalScore = 0;
+        let currentQuestion = null;
+
+        function initializeGame() {
+            const gameGrid = document.getElementById('game-grid');
+            const floatingContainer = document.getElementById('floating-elements');
+            
+            // Generate Floating Elements
+            FLOATING_ELEMENTS.forEach(el => {
+                floatingContainer.innerHTML += `<div id="${el.id}" class="floating-element">${el.symbol}</div>`;
+            });
+
+            // Generate Game Grid
+            let gridHTML = '';
+            
+            // Category Headers
+            QUESTIONS.forEach(cat => {
+                gridHTML += `<div class="p-3 text-center category-header rounded-t-lg">${cat.category}</div>`;
+            });
+
+            // Score Buttons
+            for (let i = 0; i < 5; i++) { // 5 score levels
+                QUESTIONS.forEach((cat, catIndex) => {
+                    const question = cat.questions[i];
+                    const id = `q-${catIndex}-${i}`;
+                    gridHTML += `
+                        <button id="${id}" 
+                            class="score-button p-4 flex items-center justify-center m-2 rounded-xl"
+                            onclick="showQuestion('${catIndex}', '${i}', this)">
+                            ${question.score}
+                        </button>`;
+                });
+            }
+
+            gameGrid.innerHTML = gridHTML;
+            updateScoreDisplay();
+        }
+
+        function showQuestion(catIndex, qIndex, buttonElement) {
+            if (buttonElement.classList.contains('disabled')) return;
+
+            const qData = QUESTIONS[catIndex].questions[qIndex];
+            currentQuestion = {
+                catIndex: catIndex,
+                qIndex: qIndex,
+                score: qData.score,
+                element: buttonElement
+            };
+
+            document.getElementById('question-text').innerText = qData.q;
+            document.getElementById('answer-text').innerText = "Жауабы: " + qData.a;
+            
+            // Reset modal state
+            document.getElementById('answer-container').classList.add('hidden');
+            document.getElementById('show-answer-btn').classList.remove('hidden');
+            document.getElementById('score-action-btns').classList.add('hidden');
+            
+            document.getElementById('question-modal').classList.remove('hidden');
+        }
+
+        function showAnswer() {
+            document.getElementById('answer-container').classList.remove('hidden');
+            document.getElementById('show-answer-btn').classList.add('hidden');
+            document.getElementById('score-action-btns').classList.remove('hidden');
+        }
+
+        function recordScore(isCorrect) {
+            if (!currentQuestion) return;
+
+            const points = currentQuestion.score;
+            if (isCorrect) {
+                totalScore += points;
+                showMessage(`Дұрыс! +${points} ұпай.`);
+            } else {
+                totalScore -= points;
+                showMessage(`Қате. -${points} ұпай.`);
+            }
+
+            // Disable the button and mark as played
+            currentQuestion.element.classList.add('disabled');
+            
+            hideModal();
+            updateScoreDisplay();
+        }
+
+        function hideModal() {
+            document.getElementById('question-modal').classList.add('hidden');
+            currentQuestion = null;
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('total-score').innerText = totalScore;
+        }
+
+        function showMessage(message) {
+            const messageBox = document.getElementById('message-box');
+            messageBox.innerText = message;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Initialize the game when the window loads
+        window.onload = initializeGame;
+
+        // Custom function to handle key presses for touch devices (not used, but good practice)
+        // Since this is a click-based game, touch events are inherently handled by the click handlers.
+    </script>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Floating Background Elements -->
+    <div id="floating-elements" class="studio-background pointer-events-none">
+        <!-- Elements will be injected here by JS -->
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="relative w-full max-w-6xl z-10">
+        
+        <!-- Header and Score Board -->
+        <div class="flex flex-col md:flex-row justify-between items-center bg-gray-900/80 p-4 mb-6 rounded-xl border-t-4 border-primary-color shadow-lg">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-primary-color mb-2 md:mb-0">
+                "Миуалы ағаш" зияткерлік ойыны
+            </h1>
+            <div class="flex items-center space-x-2 p-2 bg-gray-800 rounded-lg text-lg">
+                <span class="text-white">Жалпы Ұпай:</span>
+                <span id="total-score" class="text-accent-color text-2xl font-bold">0</span>
+            </div>
+        </div>
+
+        <!-- Game Grid -->
+        <div id="game-grid" class="game-grid grid grid-cols-4 gap-2 md:gap-4 p-4 rounded-xl">
+            <!-- Game cells will be injected here by JS -->
+        </div>
+        
+        <!-- Message Box -->
+        <div id="message-box" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-4 bg-yellow-600 text-white font-bold rounded-lg shadow-2xl z-50 transition-opacity duration-300">
+            <!-- Messages appear here -->
+        </div>
+    </div>
+
+    <!-- Question Modal -->
+    <div id="question-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="modal-content w-full max-w-3xl p-8 rounded-2xl text-center">
+            
+            <h2 class="text-3xl font-extrabold mb-6 text-primary-color">Сұрақ</h2>
+            
+            <!-- Question Display -->
+            <p id="question-text" class="text-2xl mb-8 p-4 bg-gray-700/70 rounded-lg text-white font-medium"></p>
+            
+            <!-- Answer Button -->
+            <button id="show-answer-btn" 
+                class="bg-accent-color text-gray-900 py-3 px-8 rounded-full font-bold text-xl hover:bg-yellow-400 transition mb-6"
+                onclick="showAnswer()">
+                Жауабын Көрсету
+            </button>
+            
+            <!-- Answer Display -->
+            <div id="answer-container" class="hidden mb-8 p-4 bg-gray-900 rounded-lg border-l-4 border-accent-color text-left">
+                <p id="answer-text" class="text-xl text-accent-color"></p>
+            </div>
+
+            <!-- Score Action Buttons -->
+            <div id="score-action-btns" class="hidden flex justify-center space-x-6">
+                <button 
+                    class="bg-green-600 text-white py-3 px-6 rounded-xl font-bold text-lg hover:bg-green-700 transition"
+                    onclick="recordScore(true)">
+                    Дұрыс (+Ұпай)
+                </button>
+                <button 
+                    class="bg-red-600 text-white py-3 px-6 rounded-xl font-bold text-lg hover:bg-red-700 transition"
+                    onclick="recordScore(false)">
+                    Қате (-Ұпай)
+                </button>
+                <button 
+                    class="bg-gray-500 text-white py-3 px-6 rounded-xl font-bold text-lg hover:bg-gray-600 transition"
+                    onclick="hideModal()">
+                    Жабу
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
